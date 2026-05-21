@@ -514,7 +514,9 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("import_strategy must be one of: NONE, SYMLINK, STRM")
 	}
 	if runtime.GOOS == "windows" && c.Import.ImportStrategy == ImportStrategySYMLINK {
-		return fmt.Errorf("import_strategy SYMLINK is not supported on Windows; use STRM instead")
+		if c.Import.AllowSymlinksOnWindows == nil || !*c.Import.AllowSymlinksOnWindows {
+			return fmt.Errorf("import_strategy SYMLINK is not supported on Windows; set allow_symlinks_on_windows: true to enable (requires Windows Developer Mode)")
+		}
 	}
 
 	// Validate import directory when strategy requires it
@@ -1145,6 +1147,13 @@ func (m *Manager) ReloadConfig() error {
 		return fmt.Errorf("error unmarshaling config: %w", err)
 	}
 
+	// viper/mapstructure silently drops *bool fields when the key exists in YAML but
+	// the pointer is left nil after Unmarshal. Read it back directly as a fallback.
+	if config.Import.AllowSymlinksOnWindows == nil {
+		val := viper.GetBool("import.allow_symlinks_on_windows")
+		config.Import.AllowSymlinksOnWindows = &val
+	}
+
 	// Ensure *bool pointers are not nil after unmarshal (viper may leave them nil if not set in YAML)
 	if config.Fuse.Enabled == nil {
 		defaultEnabled := false
@@ -1559,6 +1568,13 @@ func LoadConfig(configFile string) (*Config, error) {
 	// Unmarshal the config
 	if err := viper.Unmarshal(config); err != nil {
 		return nil, fmt.Errorf("error unmarshaling config: %w", err)
+	}
+
+	// viper/mapstructure silently drops *bool fields when the key exists in YAML but
+	// the pointer is left nil after Unmarshal. Read it back directly as a fallback.
+	if config.Import.AllowSymlinksOnWindows == nil {
+		val := viper.GetBool("import.allow_symlinks_on_windows")
+		config.Import.AllowSymlinksOnWindows = &val
 	}
 
 	// Ensure *bool pointers are not nil after unmarshal (viper may leave them nil if not set in YAML)

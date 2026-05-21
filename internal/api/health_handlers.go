@@ -1463,8 +1463,8 @@ func (s *Server) handleRegenerateLibraryFiles(c *fiber.Ctx) error {
 				creationErr = fmt.Errorf("importer service or post-processor not available")
 			}
 		} else {
-			if runtime.GOOS == "windows" {
-				creationErr = fmt.Errorf("symlinks not supported on Windows")
+			if runtime.GOOS == "windows" && (cfg.Import.AllowSymlinksOnWindows == nil || !*cfg.Import.AllowSymlinksOnWindows) {
+				creationErr = fmt.Errorf("symlinks not supported on Windows; set allow_symlinks_on_windows: true in config (requires Windows Developer Mode)")
 			} else {
 				creationErr = os.Symlink(actualPath, libraryPath)
 			}
