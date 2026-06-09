@@ -251,7 +251,6 @@ func (r *HealthRepository) GetUnhealthyFiles(ctx context.Context, limit int, str
 	// backslashes even when config paths are normalized with slashes.
 	libraryPrefix := strings.TrimRight(libraryDir, `/\`) + "/%"
 	libraryPrefixAlt := strings.TrimRight(libraryDir, `/\`) + `\%`
-
 	rows, err := r.db.QueryContext(ctx, query, maxRetries, strategy, libraryPrefix, libraryPrefixAlt, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query files due for check: %w", err)
