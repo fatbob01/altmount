@@ -1,0 +1,63 @@
+name: Fork Build (CLI binaries)
+
+# Fork-only helper. Upstream builds CLI binaries solely from release.yml on a
+# tag, and build-cli.yml is workflow_call-only, so there is no way to get a
+# Windows binary out of an ordinary branch. This wrapper builds the frontend
+# artifact that build-cli.yml expects and then calls it with
+# upload-to-release: false, which makes it publish the archives as workflow
+# artifacts instead of attaching them to a release.
+#
+# Never include this file in a PR sent upstream to javi11/altmount.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache frontend dependencies
+        uses: actions/cache@v5
+        with:
+          path: frontend/node_modules
+          key: frontend-deps-${{ runner.os }}-${{ hashFiles('frontend/bun.lock') }}
+          restore-keys: |
+            frontend-deps-${{ runner.os }}-
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          npm_package_version: 0.0.0-fork
+          GIT_COMMIT: ${{ github.sha }}
+        run: bun run build
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v6
+        with:
+          name: frontend-build
+          path: frontend/dist/
+          retention-days: 1
+
+  build-cli:
+    needs: build-frontend
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-cli.yml
+    with:
+      version: 0.0.0-fork
+      commit: ${{ github.sha }}
+      upload-to-release: false
