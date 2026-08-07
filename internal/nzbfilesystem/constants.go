@@ -63,6 +63,7 @@ var (
 	ErrNoEncryptionParams  = errors.New("no NZB data available for encryption parameters")
 	ErrFileIsCorrupted     = errors.New("file is corrupted, there are some missing segments")
 	ErrFileClosed          = errors.New("file closed")
+	ErrMetadataGone        = errors.New("file metadata was removed underneath this handle by a repair")
 )
 
 // Database operation error message templates
