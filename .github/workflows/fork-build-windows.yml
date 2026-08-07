@@ -54,8 +54,10 @@ jobs:
 
   build-cli:
     needs: build-frontend
+    # build-cli.yml's jobs declare `contents: write`; a called workflow cannot
+    # exceed the caller's grant, so anything less fails the run at startup.
     permissions:
-      contents: read
+      contents: write
     uses: ./.github/workflows/build-cli.yml
     with:
       version: 0.0.0-fork
