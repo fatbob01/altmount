@@ -13,6 +13,17 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Same suite pull-request.yml runs, so a dispatched build also tells us whether
+  # the branch still passes on Linux.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/test
+
   build-frontend:
     runs-on: ubuntu-latest
     steps:
