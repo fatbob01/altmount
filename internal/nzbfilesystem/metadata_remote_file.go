@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -2463,7 +2464,11 @@ func (mvf *MetadataVirtualFile) updateFileHealthOnError(dataCorruptionErr *usene
 					// single RC call; concurrent failures across directories are
 					// batched into one call as well. EnqueueRefresh is a no-op on a
 					// nil coalescer (test harness).
-					mvf.repairCoalescer.EnqueueRefresh(filepath.Dir(mvf.name))
+					// Virtual path: rclone's VFS is forward-slash on every
+					// platform, so filepath.Dir would enqueue "\dir" (or a bare
+					// "\" at the root) on Windows and the refresh would match
+					// nothing. See NotifyRcloneVFS for the same reasoning.
+					mvf.repairCoalescer.EnqueueRefresh(path.Dir(filepath.ToSlash(mvf.name)))
 				} else {
 					slog.WarnContext(ctx, "Failed to move corrupted metadata file, proceeding with repair trigger status", "error", moveErr)
 				}
